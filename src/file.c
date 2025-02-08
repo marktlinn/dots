@@ -10,26 +10,40 @@
 
 const char *DEFAULT_DOT_DIR = "/.dots/";
 
+static bool path_ends_with_slash(const char *path) {
+  size_t len = strlen(path);
+  return len > 0 && path[len - 1] == '/';
+}
+
 char *create_path(const char *path_a, const char *path_b) {
   size_t len_a = strlen(path_a);
   size_t len_b = strlen(path_b);
-  size_t ttl_len = len_a + len_b + 1;
+  size_t sep_len = 0;
+
+  bool needs_separator = !path_ends_with_slash(path_a) && path_b[0] != '/';
+
+  if (needs_separator) {
+    sep_len = 1;
+  }
+
+  size_t ttl_len = len_a + len_b + sep_len + 1;
 
   if (ttl_len > PATH_MAX) {
-    fprintf(stderr, "Compined path %s and %s too long\n", path_a, path_b);
+    fprintf(stderr, "Combined path too long: %s + %s\n", path_a, path_b);
     errno = ENAMETOOLONG;
     return NULL;
   }
 
   char *final_path = malloc(ttl_len);
   if (final_path == NULL) {
-    perror("failed to allocate enough memory for path");
+    perror("Failed to allocate memory for path");
     return NULL;
   }
 
-  int created_path = snprintf(final_path, ttl_len, "%s%s", path_a, path_b);
+  int written = snprintf(final_path, ttl_len, "%s%s%s", path_a,
+                         needs_separator ? "/" : "", path_b);
 
-  if (created_path < 0 || (size_t)created_path >= ttl_len) {
+  if (written < 0 || (size_t)written >= ttl_len) {
     fprintf(stderr, "snprintf failed or truncated.\n");
     free(final_path);
     return NULL;

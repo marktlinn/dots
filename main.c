@@ -1,6 +1,7 @@
 #include "include/file.h"
 #include <getopt.h>
 #include <linux/limits.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,8 +10,8 @@
 int main(int argc, char **argv) {
   char path[PATH_MAX];
   int opt;
-  unsigned int dry_run = 0; // zero false, else true
-  unsigned int manual = 0;  // zero false, else true
+  bool dry_run = false; // zero false, else true
+  bool manual = false;  // zero false, else true
   char *target = NULL;
 
   while ((opt = getopt(argc, argv, "hdmt:")) != -1) {
@@ -20,7 +21,7 @@ int main(int argc, char **argv) {
       break;
 
     case 'd':
-      dry_run = 1;
+      dry_run = true;
       printf("Dry run enabled.\n");
       break;
 
@@ -30,7 +31,7 @@ int main(int argc, char **argv) {
       break;
 
     case 'm':
-      manual = 1;
+      manual = true;
       printf("Manual enabled.\n");
       break;
 
@@ -64,10 +65,12 @@ int main(int argc, char **argv) {
     }
 
     // Construct the destination path
-    char destination[PATH_MAX];
-    snprintf(destination, sizeof(destination), "%s/%s", path, filename);
+    char *destination = create_path(path, filename);
+    if (destination == NULL) {
+      return EXIT_FAILURE;
+    }
 
-    // Move the file to the current working directory
+    // Move the file to the destination directory
     int moved = move_file(target, destination);
     if (moved == EXIT_SUCCESS) {
       printf("Moved file from %s to %s\n", target, destination);
@@ -75,10 +78,12 @@ int main(int argc, char **argv) {
       // Create a symbolic link from the original path to the current working
       // directory
       int linked = link_file(target, destination);
-      if (linked > 0) {
+      if (linked != EXIT_SUCCESS) {
+        free(destination);
         return EXIT_FAILURE;
       }
     }
+    free(destination);
   }
 
   printf("Final path: %s\n", path);

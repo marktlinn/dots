@@ -1,10 +1,15 @@
 #ifndef FILE_H
 #define FILE_H
+#include <stdbool.h>
 
-int get_pwd(char *path);
+char *create_path(const char *path_a, const char *path_b);
 
-int move_file(const char *src_path, const char *dest_path);
+char *get_default_dots_dir();
 
-int link_file(const char *dest_path, const char *src_path);
+bool get_pwd(char *path);
+
+bool move_file(const char *src_path, const char *dest_path);
+
+bool link_file(const char *dest_path, const char *src_path);
 
 #endif
